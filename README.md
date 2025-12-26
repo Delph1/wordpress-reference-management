@@ -20,7 +20,7 @@ WP Reference Manager is a lightweight WordPress plugin to manage global referenc
 - Place `[wprm_references]` in your post/page where you want the reference list to appear.
 - Citations in the content are parsed to determine ordering, so the numbers in-text correspond to the numbered list.
 
-Developer notes
+### Developer notes
 
 - Database table: `{$wpdb->prefix}wprm_references` (created on activation).
 - AJAX endpoint `wp_ajax_wprm_add_reference` allows adding references from the editor.
