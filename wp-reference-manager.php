@@ -42,6 +42,11 @@ function wprm_admin_menu() {
 }
 
 function wprm_references_page() {
+
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('You do not have permission to manage references.', 'wprm'));
+    }
+
     global $wpdb;
     $table = $wpdb->prefix . 'wprm_references';
     $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -50,6 +55,15 @@ function wprm_references_page() {
 
     // Handle add/edit
     if (isset($_POST['wprm_save_ref'])) {
+        if (
+            !isset($_POST['wprm_reference_nonce']) ||
+            !wp_verify_nonce(
+                sanitize_text_field(wp_unslash($_POST['wprm_reference_nonce'])),
+                'wprm_save_reference'
+            )
+        ) {
+            wp_die(esc_html__('Security check failed.', 'wprm'));
+        }
         $data = array(
             'title' => sanitize_text_field(wp_unslash($_POST['wprm_title'])),
             'authors' => sanitize_text_field(wp_unslash($_POST['wprm_authors'])),
@@ -75,7 +89,7 @@ function wprm_references_page() {
     // Build the admin page HTML without closing PHP tags
     if ($action === 'edit' && $edit_id) {
         $ref = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $edit_id));
-        $title = $ref ? esc_attr(wp_unslash($ref->title)) : '';
+        $title = $ref ? esc_attr(wp_unslash($ref->title)) : ''; //needed to unslash the title for data already stored in the database
         $authors = $ref ? esc_attr($ref->authors) : '';
         $year = $ref ? esc_attr($ref->year) : '';
         $publication = $ref ? esc_attr($ref->publication) : '';
@@ -91,6 +105,9 @@ function wprm_references_page() {
     $html = '<div class="wrap"><h1>Reference Manager</h1>';
     $html .= '<h2>' . esc_html($heading) . '</h2>';
     $html .= '<form method="post">';
+    ob_start();
+    wp_nonce_field('wprm_save_reference', 'wprm_reference_nonce');
+    $html .= ob_get_clean();
     $html .= '<input type="hidden" name="wprm_id" value="' . intval($id) . '">';
     $html .= '<table class="form-table">';
     $html .= '<tr><th>Authors</th><td><input type="text" name="wprm_authors" value="' . $authors . '" class="regular-text"></td></tr>';
@@ -101,10 +118,28 @@ function wprm_references_page() {
     $html .= '</table>';
     $html .= '<p><input type="submit" name="wprm_save_ref" class="button-primary" value="' . ($id ? 'Update Reference' : 'Add Reference') . '"></p>';
     $html .= '</form>';
+
+    $html .= '<h2>Search References</h2>';
+    $html .= '<form method="get">';
+    $html .= '<input type="hidden" name="page" value="wprm_references">';
+    $html .= '<input type="text" name="s" value="' . (isset($_GET['s']) ? esc_attr(sanitize_text_field(wp_unslash($_GET['s']))) : '') . '" class="regular-text">';
+    $html .= '<input type="submit" class="button" value="Search">';
+    $html .= '</form>';
+
     echo $html;
 
     // List references
     $refs = $wpdb->get_results("SELECT * FROM $table");
+
+    $search = isset($_GET['s'])
+        ? sanitize_text_field(wp_unslash($_GET['s']))
+        : '';
+
+    if ($search !== '') {
+        $refs = array_filter($refs, function ($ref) use ($search) {
+            return stripos($ref->id . ' ' . $ref->authors . ' ' . $ref->title . ' ' . $ref->year . ' ' . $ref->publication, $search) !== false;
+        });
+    }
 
     $orderby = isset($_GET['orderby'])
         ? sanitize_key($_GET['orderby'])
@@ -126,8 +161,57 @@ function wprm_references_page() {
     }
 
     if ($refs) {
+        $title_url = add_query_arg(
+            array(
+                'page'    => 'wprm_references',
+                'orderby' => 'title',
+                'order' => ($orderby === 'title' && $order === 1) ? 'desc' : 'asc',
+                's'       => $search,
+            ),
+            admin_url('admin.php')
+        );
+
+        $id_url = add_query_arg(
+            array(
+                'page'    => 'wprm_references',
+                'orderby' => 'id',
+                'order' => ($orderby === 'id' && $order === 1) ? 'desc' : 'asc',
+                's'       => $search,
+            ),
+            admin_url('admin.php')
+        );
+
+        $authors_url = add_query_arg(
+            array(
+                'page'    => 'wprm_references',
+                'orderby' => 'authors',
+                'order' => ($orderby === 'authors' && $order === 1) ? 'desc' : 'asc',
+                's'       => $search,
+            ),
+            admin_url('admin.php')
+        );
+
+        $year_url = add_query_arg(
+            array(
+                'page'    => 'wprm_references',
+                'orderby' => 'year',
+                'order' => ($orderby === 'year' && $order === 1) ? 'desc' : 'asc',
+                's'       => $search,
+            ),
+            admin_url('admin.php')
+        );
+
+        $publication_url = add_query_arg(
+            array(
+                'page'    => 'wprm_references',
+                'orderby' => 'publication',
+                'order' => ($orderby === 'publication' && $order === 1) ? 'desc' : 'asc',
+                's'       => $search,
+            ),
+            admin_url('admin.php')
+        );
         echo '<h2>All References</h2>';
-        echo '<table class="widefat"><thead><tr><th><a href="?page=wprm_references&orderby=id&order=' . ($orderby === 'id' && $order === 1 ? 'desc' : 'asc') . '">ID</a></th><th><a href="?page=wprm_references&orderby=authors&order=' . ($orderby === 'authors' && $order === 1 ? 'desc' : 'asc') . '">Authors</a></th><th><a href="?page=wprm_references&orderby=title&order=' . ($orderby === 'title' && $order === 1 ? 'desc' : 'asc') . '">Title</a></th><th><a href="?page=wprm_references&orderby=year&order=' . ($orderby === 'year' && $order === 1 ? 'desc' : 'asc') . '">Year</a></th><th><a href="?page=wprm_references&orderby=publication&order=' . ($orderby === 'publication' && $order === 1 ? 'desc' : 'asc') . '">Publication</a></th><th>Actions</th></tr></thead><tbody>';
+        echo '<table class="widefat"><thead><tr><th><a href="' . esc_url($id_url) . '">ID</a></th><th><a href="' . esc_url($authors_url) . '">Authors</a></th><th><a href="' . esc_url($title_url) . '">Title</a></th><th><a href="' . esc_url($year_url) . '">Year</a></th><th><a href="' . esc_url($publication_url) . '">Publication</a></th><th>Actions</th></tr></thead><tbody>';
         foreach ($refs as $r) {
             echo '<tr>';
             echo '<td>' . intval($r->id) . '</td>';
@@ -146,6 +230,7 @@ function wprm_references_page() {
         echo '<p>No references found.</p>';
     }
     echo '</div>';
+
 }
 
 // TinyMCE button integration
