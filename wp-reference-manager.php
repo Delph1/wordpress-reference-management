@@ -2,7 +2,7 @@
 /*
 Plugin Name: WP Reference Manager
 Description: Manage and cite global references in IEEE format. Insert citations via TinyMCE and display reference lists with a shortcode.
-Version: 0.2.0
+Version: 0.6.0
 Author: Andreas Galistel
 */
 
