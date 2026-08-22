@@ -104,10 +104,30 @@ function wprm_references_page() {
     echo $html;
 
     // List references
-    $refs = $wpdb->get_results("SELECT * FROM $table ORDER BY id DESC");
+    $refs = $wpdb->get_results("SELECT * FROM $table");
+
+    $orderby = isset($_GET['orderby'])
+        ? sanitize_key($_GET['orderby'])
+        : 'id';
+
+    $order = isset($_GET['order']) && strtolower($_GET['order']) === 'asc'
+        ? 1
+        : -1;
+
+    $allowed_columns = array('id', 'authors', 'title', 'year', 'publication');
+
+    if (in_array($orderby, $allowed_columns, true)) {
+        usort($refs, function ($first, $second) use ($orderby, $order) {
+            $first_value = (string) $first->$orderby;
+            $second_value = (string) $second->$orderby;
+
+            return $order * strnatcasecmp($first_value, $second_value);
+        });
+    }
+
     if ($refs) {
         echo '<h2>All References</h2>';
-        echo '<table class="widefat"><thead><tr><th>ID</th><th>Authors</th><th>Title</th><th>Year</th><th>Publication</th><th>Actions</th></tr></thead><tbody>';
+        echo '<table class="widefat"><thead><tr><th><a href="?page=wprm_references&orderby=id&order=' . ($orderby === 'id' && $order === 1 ? 'desc' : 'asc') . '">ID</a></th><th><a href="?page=wprm_references&orderby=authors&order=' . ($orderby === 'authors' && $order === 1 ? 'desc' : 'asc') . '">Authors</a></th><th><a href="?page=wprm_references&orderby=title&order=' . ($orderby === 'title' && $order === 1 ? 'desc' : 'asc') . '">Title</a></th><th><a href="?page=wprm_references&orderby=year&order=' . ($orderby === 'year' && $order === 1 ? 'desc' : 'asc') . '">Year</a></th><th><a href="?page=wprm_references&orderby=publication&order=' . ($orderby === 'publication' && $order === 1 ? 'desc' : 'asc') . '">Publication</a></th><th>Actions</th></tr></thead><tbody>';
         foreach ($refs as $r) {
             echo '<tr>';
             echo '<td>' . intval($r->id) . '</td>';
