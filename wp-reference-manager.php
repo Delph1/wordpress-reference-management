@@ -101,6 +101,29 @@ function wprm_references_page() {
         $id = 0;
         $heading = 'Add Reference';
     }
+    $authors_values = $wpdb->get_col(
+        "SELECT DISTINCT authors
+        FROM $table
+        WHERE authors <> ''
+        ORDER BY authors ASC"
+    );
+
+    $publication_values = $wpdb->get_col(
+        "SELECT DISTINCT publication
+        FROM $table
+        WHERE publication <> ''
+        ORDER BY publication ASC"
+    );
+
+    $author_options = '';
+    foreach ($authors_values as $value) {
+        $author_options .= '<option value="' . esc_attr($value) . '"></option>';
+    }
+
+    $publication_options = '';
+    foreach ($publication_values as $value) {
+        $publication_options .= '<option value="' . esc_attr($value) . '"></option>';
+    }
 
     $html = '<div class="wrap"><h1>Reference Manager</h1>';
     $html .= '<h2>' . esc_html($heading) . '</h2>';
@@ -110,9 +133,16 @@ function wprm_references_page() {
     $html .= ob_get_clean();
     $html .= '<input type="hidden" name="wprm_id" value="' . intval($id) . '">';
     $html .= '<table class="form-table">';
-    $html .= '<tr><th>Authors</th><td><input type="text" name="wprm_authors" value="' . $authors . '" class="regular-text"></td></tr>';
+    $html .= '<tr><th>Authors</th><td>';
+    $html .= '<input type="text" name="wprm_authors" value="' . $authors . '" list="wprm-authors" class="regular-text">';
+    $html .= '<datalist id="wprm-authors">' . $author_options . '</datalist>';
+    $html .= '</td></tr>';
     $html .= '<tr><th>Title</th><td><input type="text" name="wprm_title" value="' . $title . '" class="regular-text" required></td></tr>';
-    $html .= "<tr><th>Publication</th><td><input type=\"text\" name=\"wprm_publication\" value=\"" . $publication . "\" class=\"regular-text\"> <input type=\"button\" class=\"button-secondary\" value=\"NA\" onclick=\"document.getElementsByName('wprm_publication')[0].value='Nerikes Allehanda';\"></td></tr>";
+    $html .= '<tr><th>Publication</th><td>';
+    $html .= '<input type="text" name="wprm_publication" value="' . $publication . '" list="wprm-publications" class="regular-text">';
+    $html .= ' <input type="button" class="button-secondary" value="NA" onclick="document.getElementsByName(\'wprm_publication\')[0].value=\'Nerikes Allehanda\';">';
+    $html .= '<datalist id="wprm-publications">' . $publication_options . '</datalist>';
+    $html .= '</td></tr>';
     $html .= '<tr><th>Year</th><td><input type="text" name="wprm_year" value="' . $year . '" style="width:150px;" class="regular-text"></td></tr>';
     $html .= '<tr><th>URL</th><td><input type="url" name="wprm_url" value="' . $url . '" class="regular-text"></td></tr>';
     $html .= '</table>';
