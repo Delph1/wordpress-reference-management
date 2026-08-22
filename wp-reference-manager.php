@@ -51,11 +51,11 @@ function wprm_references_page() {
     // Handle add/edit
     if (isset($_POST['wprm_save_ref'])) {
         $data = array(
-            'title' => sanitize_text_field($_POST['wprm_title']),
-            'authors' => sanitize_text_field($_POST['wprm_authors']),
-            'year' => sanitize_text_field($_POST['wprm_year']),
-            'publication' => sanitize_text_field($_POST['wprm_publication']),
-            'url' => esc_url_raw($_POST['wprm_url']),
+            'title' => sanitize_text_field(wp_unslash($_POST['wprm_title'])),
+            'authors' => sanitize_text_field(wp_unslash($_POST['wprm_authors'])),
+            'year' => sanitize_text_field(wp_unslash($_POST['wprm_year'])),
+            'publication' => sanitize_text_field(wp_unslash($_POST['wprm_publication'])),
+            'url' => esc_url_raw(wp_unslash($_POST['wprm_url'])),
         );
         if (!empty($_POST['wprm_id'])) {
             $wpdb->update($table, $data, array('id' => intval($_POST['wprm_id'])));
@@ -75,7 +75,7 @@ function wprm_references_page() {
     // Build the admin page HTML without closing PHP tags
     if ($action === 'edit' && $edit_id) {
         $ref = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $edit_id));
-        $title = $ref ? esc_attr($ref->title) : '';
+        $title = $ref ? esc_attr(wp_unslash($ref->title)) : '';
         $authors = $ref ? esc_attr($ref->authors) : '';
         $year = $ref ? esc_attr($ref->year) : '';
         $publication = $ref ? esc_attr($ref->publication) : '';
@@ -203,7 +203,7 @@ function wprm_references_shortcode($atts) {
         foreach ($refs as $r) { if ($r->id == $id) { $ref = $r; break; } }
         if ($ref) {
             $authors = $ref->authors ? esc_html($ref->authors) : '';
-            $title = $ref->title ? esc_html($ref->title) : '';
+            $title = $ref->title ? esc_html(wp_unslash($ref->title)) : '';
             $publication = $ref->publication ? esc_html($ref->publication) : '';
             $year = $ref->year ? esc_html($ref->year) : '';
             $url = $ref->url ? esc_url($ref->url) : '';
